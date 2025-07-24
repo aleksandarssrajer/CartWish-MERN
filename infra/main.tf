@@ -17,7 +17,7 @@ provider "google" {
   region  = "europe-west1"
 }
 
-resource "google_storage_bucket" "tf_state" {
+resource "google_storage_bucket" "terraform_state" {
   name     = "cartwish-terraform-state"  # mora biti globalno jedinstveno
   location = "EU"
   force_destroy = true
