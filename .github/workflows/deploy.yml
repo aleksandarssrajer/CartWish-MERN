@@ -57,26 +57,21 @@ jobs:
 
       - name: Debug terraform backend_url output
         working-directory: ./infra
-        run: terraform output -raw backend_url || echo "Output backend_url does not exist" 
+        run: terraform output backend_url || echo "Output backend_url does not exist" 
 
-      - name: Get backend URL with escape
+      - name: Get backend URL
         id: backend_url
         working-directory: ./infra
         run: |
-          url=$(terraform output -raw backend_url)
-          # Escape '::' because GitHub Actions interprets it specially in $GITHUB_OUTPUT
-          url="${url//::/%3A%3A}"
-          echo "BACKEND_URL=$url" >> $GITHUB_OUTPUT
-###
-      # === FRONTEND ===
-      - name: Build & Push frontend image with decoded backend URL
-        run: |
-          # Decode escaped :: back to ::
-          decoded_url=$(echo "${{ steps.backend_url.outputs.BACKEND_URL }}" | sed 's/%3A%3A/::/g')
-          echo "Using backend URL: $decoded_url"
+          BACKEND_URL=$(terraform output -raw backend_url | sed 's/::debug::Terraform//g')
+          echo "Cleaned BACKEND_URL: $BACKEND_URL"
+          echo "BACKEND_URL=$BACKEND_URL" >> $GITHUB_OUTPUT
 
+      # === FRONTEND ===
+      - name: Build & Push frontend image with backend URL
+        run: |
           docker build \
-            --build-arg VITE_API_URL=$decoded_url/api \
+            --build-arg VITE_API_URL=${{ steps.backend_url.outputs.BACKEND_URL }}/api \
             -t europe-west1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/cartwish-repo/frontend:latest ./frontend
           docker push europe-west1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/cartwish-repo/frontend:latest
 
