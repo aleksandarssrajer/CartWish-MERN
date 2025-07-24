@@ -19,7 +19,8 @@ resource "google_iam_workload_identity_pool_provider" "github_provider" { //Krei
     "attribute.ref"          = "assertion.ref"
   }
   # attribute_condition = "attribute.repository == assertion.repository && attribute.repository_owner == assertion.repository_owner"
-  attribute_condition = "attribute.repository == 'aleksandarssrajer/CartWish-MERN'"
+  # attribute_condition = "attribute.repository == 'aleksandarssrajer/CartWish-MERN'"
+attribute_condition = "true"
 }
 
 resource "google_service_account_iam_member" "github_wif_binding" { // Dodjeljuje ulogu Workload Identity User (roles/iam.workloadIdentityUser) specifičnom GitHub repozitoriju (devoteam-srb/gcp-2025-AS) putem Workload Identity Poola.
