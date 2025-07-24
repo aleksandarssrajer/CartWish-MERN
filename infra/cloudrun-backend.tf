@@ -32,9 +32,14 @@ resource "google_cloud_run_service" "backend" {
 
 }
 
-# resource "google_cloud_run_service_iam_member" "backend_invoked_by_frontend" {
-#   location = google_cloud_run_service.backend.location
-#   service  = google_cloud_run_service.backend.name
-#   role     = "roles/run.invoker"
-#   member = "serviceAccount:${google_service_account.frontend_sa.email}"
-# }
+resource "google_cloud_run_service_iam_member" "backend_invoked_by_frontend" {
+  location = google_cloud_run_service.backend.location
+  service  = google_cloud_run_service.backend.name
+  role     = "roles/run.invoker"
+  member = "serviceAccount:${google_service_account.frontend_sa.email}"
+
+  depends_on = [
+    google_cloud_run_service.backend,
+    google_service_account.frontend_sa
+  ]
+}

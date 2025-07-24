@@ -34,5 +34,3 @@ resource "google_project_iam_member" "github_actions_sa" { //Dodeljuje ulogu ser
   role    = "roles/iam.serviceAccountUser"
   member  = "serviceAccount:${google_service_account.github_actions.email}"
 }
-########
-////
