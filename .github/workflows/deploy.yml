@@ -63,7 +63,7 @@ jobs:
         id: backend_url
         working-directory: ./infra
         run: |
-          BACKEND_URL=$(terraform output -json backend_url | jq -r '.')
+          BACKEND_URL=$(terraform output -raw backend_url)
           echo "BACKEND_URL=$BACKEND_URL" >> $GITHUB_OUTPUT
 
       # === FRONTEND ===
@@ -82,4 +82,3 @@ jobs:
         working-directory: ./infra
         run: terraform output
 
-        
