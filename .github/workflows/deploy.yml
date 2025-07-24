@@ -64,8 +64,8 @@ jobs:
         working-directory: ./infra
         run: |
           BACKEND_URL=$(terraform output -raw backend_url | grep -o 'https://[^: ]*')
-          echo "Cleaned BACKEND_URL: $BACKEND_URL"
-          echo "BACKEND_URL=$BACKEND_URL" >> $GITHUB_OUTPUT
+          url=$(echo "$BACKEND_URL" | head -n 1 | tr -d '\n\r')
+          echo "BACKEND_URL=$url" >> $GITHUB_OUTPUT
       # === FRONTEND ===
       - name: Build & Push frontend image with backend URL
         run: |
