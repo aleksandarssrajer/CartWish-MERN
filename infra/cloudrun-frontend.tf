@@ -13,11 +13,11 @@ resource "google_cloud_run_service" "frontend" {
       }
     }
   }
-  # metadata {
-  #   annotations = {
-  #     "run.googleapis.com/ingress" = "all"
-  #   }
-  # }
+  metadata {
+    annotations = {
+      "run.googleapis.com/ingress" = "all"
+    }
+  }
 }
 
 # resource "google_service_account" "frontend_sa" {
