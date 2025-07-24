@@ -1,0 +1,69 @@
+name: Deploy to GCP Cloud Run
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  REGION: europe-west1
+  REPO_NAME: cartwish-repo
+  BACKEND_NAME: backend
+  FRONTEND_NAME: frontend
+
+jobs:
+  deploy:
+    name: Build & Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Authenicate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{secrets.WORKLOAD_IDENTITY_PROVIDER}}
+          service_account: ${{secrets.SERVICE_ACCOUNT_EMAIL}}
+
+      - name: Setup Docker
+        uses: docker/setup-buildx-action@v3
+
+      - name: Configure Docker for Artifact Registry
+        run: |
+          gcloud auth configure-docker europe-west1-docker.pkg.dev
+
+      - name: Build & Push backend image
+        run: |
+          docker build -t europe-west1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/cartwish-repo/backend:latest ./backend
+          docker push europe-west1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/cartwish-repo/backend:latest
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Apply backend
+        run: terraform apply -target=google_cloud_run_service.backend -auto-approve
+
+      - name: Get backend URL
+        id: backend_url
+        run: |
+          BACKEND_URL=$(terraform output -raw backend_url)
+          echo "BACKEND_URL=$BACKEND_URL" >> $GITHUB_OUTPUT
+
+      # === FRONTEND ===
+      - name: Build & Push frontend image with backend URL
+        run: |
+          docker build \
+            --build-arg VITE_API_URL=${{ steps.backend_url.outputs.BACKEND_URL }}/api \
+            -t europe-west1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/cartwish-repo/frontend:latest ./frontend
+          docker push europe-west1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/cartwish-repo/frontend:latest
+
+      - name: Terraform Apply frontend
+        run: terraform apply -target=google_cloud_run_service.frontend -auto-approve
+
+      - name: Output URLs
+        run: terraform output
