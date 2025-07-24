@@ -54,7 +54,7 @@ jobs:
         working-directory: ./infra
         run: terraform init
 
-      - name: Deploy backend to Cloud Run (if changed)
+      - name: Deploy backend to Cloud Run 
         working-directory: ./infra
         run: |
           terraform apply \
