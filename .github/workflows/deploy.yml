@@ -55,6 +55,10 @@ jobs:
         working-directory: ./infra
         run: terraform apply -target=google_cloud_run_service.backend -auto-approve
 
+      - name: Debug terraform backend_url output
+        working-directory: ./infra
+        run: terraform output backend_url || echo "Output backend_url does not exist" 
+
       - name: Get backend URL
         id: backend_url
         working-directory: ./infra
