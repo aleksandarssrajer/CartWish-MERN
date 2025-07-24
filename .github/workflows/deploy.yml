@@ -71,7 +71,7 @@ jobs:
           gcloud auth configure-docker europe-west1-docker.pkg.dev
 
       - name: Build & Push backend image
-        if: steps.set_backend.outputs.changed == 'true'
+        if: steps.check_backend.outputs.changed == 'true'
         run: |
           docker build -t europe-west1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/cartwish-repo/backend:${{ env.IMAGE_TAG }} ./backend
           docker push europe-west1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/cartwish-repo/backend:${{ env.IMAGE_TAG }}
@@ -81,7 +81,6 @@ jobs:
         run: terraform init
 
       - name: Deploy backend to Cloud Run 
-        if: steps.set_backend.outputs.changed == 'true'
         working-directory: ./infra
         run: |
           terraform apply \
@@ -111,13 +110,12 @@ jobs:
 
       
       - name: Build & Push frontend image with backend URL
-        if: steps.set_frontend.outputs.changed == 'true'
+        if: steps.check_frontend.outputs.changed == 'true'
         run: |
           docker build --build-arg VITE_API_URL=${{ steps.backend_url.outputs.BACKEND_URL }}/api -t europe-west1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/cartwish-repo/frontend:${{ github.sha }} ./frontendJS
           docker push europe-west1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/cartwish-repo/frontend:${{ github.sha }}
 
       - name: Deploy frontend to Cloud Run 
-        if: steps.set_frontend.outputs.changed == 'true'
         working-directory: ./infra
         run: |
           terraform apply \
