@@ -6,6 +6,8 @@ import basket from '../../assets/basket.png';
 import { NavLink } from 'react-router-dom';
 import CartContext from '../../context/CartContext';
 import UserContext from '../../context/UserContext';
+import { getCategoryImageUrl } from '../../utils/getImageUrl';
+
 
 const ProductCard = ({ product }) => {
   const { addToCart } = useContext(CartContext);
@@ -15,7 +17,8 @@ const ProductCard = ({ product }) => {
       <div className="product_image">
         <NavLink to={`/product/${product?._id}`}>
           <img
-            src={`${import.meta.env.VITE_API_URL}/products/${product?.images[0]}`}  alt="product image"
+            src={getImageUrl(product?.images[0])} 
+            alt="product image"
           />
         </NavLink>
       </div>

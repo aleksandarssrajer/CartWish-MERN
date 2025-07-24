@@ -1,6 +1,8 @@
 import './ProductsSidebar.css';
 import LinkWithIcon from '../Navbar/LinkWithIcon';
 import useData from '../../hooks/useData';
+import { getCategoryImageUrl } from '../../utils/getImageUrl';
+
 
 const ProductsSidebar = () => {
   // const [categories, setCategories] = useState([]);
@@ -26,7 +28,7 @@ const ProductsSidebar = () => {
               id={category._id}
               title={category.name}
               link={`/products?category=${category.name}`}
-              emoji={`${import.meta.env.VITE_API_URL}/category/${category.image}`}
+              emoji={getCategoryImageUrl(category.image)}
               sidebar={true}
             />
           ))}
