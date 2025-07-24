@@ -12,8 +12,8 @@ permissions:
 env:
   REGION: europe-west1
   REPO_NAME: cartwish-repo
-  BACKEND_NAME: backend
-  FRONTEND_NAME: frontend
+  BACKEND_NAME: cartwish-backend
+  FRONTEND_NAME: cartwish-frontend
   IMAGE_TAG: ${{ github.sha }}
 
 
