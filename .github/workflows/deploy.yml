@@ -117,7 +117,7 @@ jobs:
           docker push europe-west1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/cartwish-repo/frontend:${{ github.sha }}
 
       - name: Deploy frontend to Cloud Run 
-      if: steps.set_frontend.outputs.changed == 'true'
+        if: steps.set_frontend.outputs.changed == 'true'
         working-directory: ./infra
         run: |
           terraform apply \
