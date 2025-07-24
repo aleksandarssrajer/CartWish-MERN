@@ -25,7 +25,7 @@ const SingleProductPage = () => {
             <div className="single_product_thumbnails">
               {product.images.map((image, index) => (
                 <img
-                  src={`http://localhost:5000/products/${image}`}
+                  src={getImageUrl(image)}
                   key={index}
                   className={selectedImage === index ? 'selected_image' : ''}
                   alt={product.title}
@@ -36,7 +36,7 @@ const SingleProductPage = () => {
               ))}
             </div>
             <img
-              src={`http://localhost:5000/products/${product.images[selectedImage]}`}
+              src={getImageUrl(product.images[selectedImage])}
               alt={product.title}
               className="single_product_display"
             />
