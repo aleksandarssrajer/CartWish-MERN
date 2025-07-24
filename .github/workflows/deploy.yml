@@ -62,9 +62,7 @@ jobs:
       - name: Get backend URL
         id: backend_url
         working-directory: ./infra
-        run: |
-          BACKEND_URL=$(terraform output -raw backend_url)
-          echo "BACKEND_URL=$BACKEND_URL" >> $GITHUB_OUTPUT
+        run: echo "BACKEND_URL=$(terraform output -raw backend_url)" >> $GITHUB_OUTPUT
 
       # === FRONTEND ===
       - name: Build & Push frontend image with backend URL
