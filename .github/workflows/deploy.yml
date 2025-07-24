@@ -61,7 +61,7 @@ jobs:
             -target=google_cloud_run_service.backend \
             -var="backend_image_tag=${{ env.IMAGE_TAG }}" \
             -auto-approve
-
+###
       # - name: Debug terraform backend_url output
       #   working-directory: ./infra
       #   run: terraform output backend_url || echo "Output backend_url does not exist" 
