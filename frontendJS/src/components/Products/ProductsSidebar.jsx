@@ -34,5 +34,5 @@ const ProductsSidebar = () => {
     </aside>
   );
 };
-
+//
 export default ProductsSidebar;
