@@ -1,7 +1,7 @@
 import './ProductsSidebar.css';
 import LinkWithIcon from '../Navbar/LinkWithIcon';
 import useData from '../../hooks/useData';
-import { getCategoryImageUrl } from '../../utils/getImageUrl';
+import { getImageUrl } from '../../utils/getImageUrl';
 
 
 const ProductsSidebar = () => {
@@ -28,7 +28,7 @@ const ProductsSidebar = () => {
               id={category._id}
               title={category.name}
               link={`/products?category=${category.name}`}
-              emoji={getCategoryImageUrl(category.image)}
+              emoji={getImageUrl(category.image, 'category')}
               sidebar={true}
             />
           ))}
