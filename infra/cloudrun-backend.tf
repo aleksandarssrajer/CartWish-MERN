@@ -5,7 +5,7 @@ resource "google_cloud_run_service" "backend" {
   template {
     spec {
       containers {
-        image = "europe-west1-docker.pkg.dev/sara-sandbox-interns/cartwish-repo/backend:latest"
+        image = "europe-west1-docker.pkg.dev/sara-sandbox-interns/cartwish-repo/backend:${var.frontend_image_tag}"
 
         env {
           name  = "DATABASE"

@@ -14,6 +14,8 @@ env:
   REPO_NAME: cartwish-repo
   BACKEND_NAME: backend
   FRONTEND_NAME: frontend
+  IMAGE_TAG: ${{ github.sha }}
+
 
 jobs:
   deploy:
@@ -23,6 +25,7 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        
 
       - name: Authenicate to Google Cloud
         uses: google-github-actions/auth@v2
@@ -44,41 +47,58 @@ jobs:
 
       - name: Build & Push backend image
         run: |
-          docker build -t europe-west1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/cartwish-repo/backend:latest ./backend
-          docker push europe-west1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/cartwish-repo/backend:latest
+          docker build -t europe-west1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/cartwish-repo/backend:${{ env.IMAGE_TAG }} ./backend
+          docker push europe-west1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/cartwish-repo/backend:${{ env.IMAGE_TAG }}
 
       - name: Terraform Init
         working-directory: ./infra
         run: terraform init
 
-      - name: Terraform Apply backend
-        working-directory: ./infra
-        run: terraform apply -target=google_cloud_run_service.backend -auto-approve
-
-      - name: Debug terraform backend_url output
-        working-directory: ./infra
-        run: terraform output backend_url || echo "Output backend_url does not exist" 
-
-      - name: Get backend URL
-        id: backend_url
+      - name: Deploy backend to Cloud Run (if changed)
         working-directory: ./infra
         run: |
-          BACKEND_URL=$(terraform output -raw backend_url | grep -o 'https://[^: ]*')
-          url=$(echo "$BACKEND_URL" | head -n 1 | tr -d '\n\r')
+          terraform apply \
+            -target=google_cloud_run_service.backend \
+            -var="backend_image_tag=${{ env.IMAGE_TAG }}" \
+            -auto-approve
+
+      # - name: Debug terraform backend_url output
+      #   working-directory: ./infra
+      #   run: terraform output backend_url || echo "Output backend_url does not exist" 
+
+      # - name: Get backend URL
+      #   id: backend_url
+      #   working-directory: ./infra
+      #   run: |
+      #     BACKEND_URL=$(terraform output -raw backend_url | grep -o 'https://[^: ]*')
+      #     url=$(echo "$BACKEND_URL" | head -n 1 | tr -d '\n\r')
+      #     echo "BACKEND_URL=$url" >> $GITHUB_OUTPUT
+
+      - name: Get current backend URL from Cloud Run
+        id: backend_url
+        run: |
+          url=$(gcloud run services describe ${{ env.BACKEND_NAME }} \
+            --region ${{ env.REGION }} \
+            --format='value(status.url)')
           echo "BACKEND_URL=$url" >> $GITHUB_OUTPUT
+
       # === FRONTEND ===
       - name: Build & Push frontend image with backend URL
         run: |
           docker build \
             --build-arg VITE_API_URL=${{ steps.backend_url.outputs.BACKEND_URL }}/api \
-            -t europe-west1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/cartwish-repo/frontend:latest ./frontendJS
-          docker push europe-west1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/cartwish-repo/frontend:latest
+            -t europe-west1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/cartwish-repo/frontend:${{ env.IMAGE_TAG }} ./frontendJS
+          docker push europe-west1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/cartwish-repo/frontend:${{ env.IMAGE_TAG }}
 
-      - name: Terraform Apply frontend
+      - name: Deploy frontend to Cloud Run (if changed)
         working-directory: ./infra
-        run: terraform apply -target=google_cloud_run_service.frontend -auto-approve
+        run: |
+          terraform apply \
+            -target=google_cloud_run_service.frontend \
+            -var="frontend_image_tag=${{ env.IMAGE_TAG }}" \
+            -auto-approve
 
-      - name: Output URLs
+      - name: Output Cloud Run URLs
         working-directory: ./infra
         run: terraform output
 

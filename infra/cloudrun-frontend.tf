@@ -8,7 +8,7 @@ resource "google_cloud_run_service" "frontend" {
     spec {
       # service_account_name = google_service_account.frontend_sa.email
       containers {
-        image = "europe-west1-docker.pkg.dev/sara-sandbox-interns/cartwish-repo/frontend:latest"
+        image = "europe-west1-docker.pkg.dev/sara-sandbox-interns/cartwish-repo/frontend:${var.frontend_image_tag}"
         ports {
           container_port = 80
         }
