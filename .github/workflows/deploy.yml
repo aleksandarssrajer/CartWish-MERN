@@ -57,7 +57,7 @@ jobs:
 
       - name: Debug terraform backend_url output
         working-directory: ./infra
-        run: terraform output backend_url || echo "Output backend_url does not exist" 
+        run: terraform output -raw backend_url || echo "Output backend_url does not exist" 
 
       - name: Get backend URL with escape
         id: backend_url
