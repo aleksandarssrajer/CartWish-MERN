@@ -1,5 +1,5 @@
 resource "google_iam_workload_identity_pool" "git_pool" { // Kreira workload identity pool
-  workload_identity_pool_id = "git-pool-101"
+  workload_identity_pool_id = "git-pool-103"
   display_name              = "GitHub Actions Pool"
 }
 
@@ -25,6 +25,6 @@ resource "google_iam_workload_identity_pool_provider" "github_provider" { //Krei
 resource "google_service_account_iam_member" "github_wif_binding" { // Dodjeljuje ulogu Workload Identity User (roles/iam.workloadIdentityUser) specifičnom GitHub repozitoriju (devoteam-srb/gcp-2025-AS) putem Workload Identity Poola.
   service_account_id = google_service_account.github_actions.name
   role               = "roles/iam.workloadIdentityUser"
-  member             = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.git_pool.name}/attribute.repository/devoteam-srb/gcp-2025-AS"
+  member             = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.git_pool.name}/attribute.repository/aleksandarssrajer/CartWish-MERN"
 }
 //Ovo je ključni korak koji povezuje GitHub repozitorij s GCP service accountom. Samo workflowovi iz navedenog repozitorija mogu "preuzeti" identitet service accounta i izvršavati akcije (npr. deploy na Cloud Run, upload u Artifact Registry).
