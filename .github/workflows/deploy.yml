@@ -33,24 +33,24 @@ jobs:
         id: check_backend
         run: |
           git fetch origin main --depth=2
-          git diff --quiet origin/main -- backend || echo "changed=true" >> $GITHUB_OUTPUT
-          echo "changed=false" >> $GITHUB_OUTPUT
+          if git diff --quiet origin/main -- backend; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
       
-      - name: Set backend_changed output
-        id: set_backend
-        run: echo "::set-output name=changed::$(if git diff --quiet origin/main -- backend; then echo false; else echo true; fi)"
 
       - name: Check if frontend changed
         id: check_frontend
         run: |
           git fetch origin main --depth=2
-          git diff --quiet origin/main -- frontendJS || echo "changed=true" >> $GITHUB_OUTPUT
-          echo "changed=false" >> $GITHUB_OUTPUT
+          if git diff --quiet origin/main -- frontendJS; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
 
-      - name: Set frontend_changed output
-        id: set_frontend
-        run: echo "::set-output name=changed::$(if git diff --quiet origin/main -- frontendJS; then echo false; else echo true; fi)"
-        
+  
 
       - name: Authenicate to Google Cloud
         uses: google-github-actions/auth@v2
