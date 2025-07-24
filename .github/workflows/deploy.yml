@@ -21,10 +21,35 @@ jobs:
   deploy:
     name: Build & Deploy
     runs-on: ubuntu-latest
+    outputs:
+      backend_changed: ${{ steps.check_backend.outputs.changed }}
+      frontend_changed: ${{ steps.check_frontend.outputs.changed }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Check if backend changed
+        id: check_backend
+        run: |
+          git fetch origin main --depth=2
+          git diff --quiet origin/main -- backend || echo "changed=true" >> $GITHUB_OUTPUT
+          echo "changed=false" >> $GITHUB_OUTPUT
+      
+      - name: Set backend_changed output
+        id: set_backend
+        run: echo "::set-output name=changed::$(if git diff --quiet origin/main -- backend; then echo false; else echo true; fi)"
+
+      - name: Check if frontend changed
+        id: check_frontend
+        run: |
+          git fetch origin main --depth=2
+          git diff --quiet origin/main -- frontendJS || echo "changed=true" >> $GITHUB_OUTPUT
+          echo "changed=false" >> $GITHUB_OUTPUT
+
+      - name: Set frontend_changed output
+        id: set_frontend
+        run: echo "::set-output name=changed::$(if git diff --quiet origin/main -- frontendJS; then echo false; else echo true; fi)"
         
 
       - name: Authenicate to Google Cloud
@@ -46,6 +71,7 @@ jobs:
           gcloud auth configure-docker europe-west1-docker.pkg.dev
 
       - name: Build & Push backend image
+        if: steps.set_backend.outputs.changed == 'true'
         run: |
           docker build -t europe-west1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/cartwish-repo/backend:${{ env.IMAGE_TAG }} ./backend
           docker push europe-west1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/cartwish-repo/backend:${{ env.IMAGE_TAG }}
@@ -82,15 +108,14 @@ jobs:
             --format='value(status.url)')
           echo "BACKEND_URL=$url" >> $GITHUB_OUTPUT
 
-      # === FRONTEND ===
+      
       - name: Build & Push frontend image with backend URL
+        if: steps.set_frontend.outputs.changed == 'true'
         run: |
-          docker build \
-            --build-arg VITE_API_URL=${{ steps.backend_url.outputs.BACKEND_URL }}/api \
-            -t europe-west1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/cartwish-repo/frontend:${{ env.IMAGE_TAG }} ./frontendJS
-          docker push europe-west1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/cartwish-repo/frontend:${{ env.IMAGE_TAG }}
+          docker build --build-arg VITE_API_URL=${{ steps.backend_url.outputs.BACKEND_URL }}/api -t europe-west1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/cartwish-repo/frontend:${{ github.sha }} ./frontendJS
+          docker push europe-west1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/cartwish-repo/frontend:${{ github.sha }}
 
-      - name: Deploy frontend to Cloud Run (if changed)
+      - name: Deploy frontend to Cloud Run 
         working-directory: ./infra
         run: |
           terraform apply \
