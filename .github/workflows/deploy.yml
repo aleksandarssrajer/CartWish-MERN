@@ -71,7 +71,7 @@ jobs:
         run: |
           docker build \
             --build-arg VITE_API_URL=${{ steps.backend_url.outputs.BACKEND_URL }}/api \
-            -t europe-west1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/cartwish-repo/frontend:latest ./frontend
+            -t europe-west1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/cartwish-repo/frontend:latest ./frontendJS
           docker push europe-west1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/cartwish-repo/frontend:latest
 
       - name: Terraform Apply frontend
