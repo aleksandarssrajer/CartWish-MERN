@@ -27,4 +27,4 @@ resource "google_service_account_iam_member" "github_wif_binding" { // Dodjeljuj
   role               = "roles/iam.workloadIdentityUser"
   member             = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.git_pool.name}/attribute.repository/aleksandarssrajer/CartWish-MERN"
 }
-//Ovo je ključni korak koji povezuje GitHub repozitorij s GCP service accountom. Samo workflowovi iz navedenog repozitorija mogu "preuzeti" identitet service accounta i izvršavati akcije (npr. deploy na Cloud Run, upload u Artifact Registry).
+//Ovo je ključni korak koji povezuje GitHub repozitorij s GCP service accountom. Samo workflowovi iz navedenog repozitorija mogu "preuzeti" identitet service accounta i izvršavati akcije (npr. deploy na Cloud Run, upload u Artifact Registry).....
