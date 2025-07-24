@@ -63,7 +63,7 @@ jobs:
         id: backend_url
         working-directory: ./infra
         run: |
-          BACKEND_URL=$(terraform output -raw backend_url | sed 's/::debug::Terraform//g')
+          BACKEND_URL=$(terraform output -raw backend_url | grep -o 'https://[^ ]*')
           echo "Cleaned BACKEND_URL: $BACKEND_URL"
           echo "BACKEND_URL=$BACKEND_URL" >> $GITHUB_OUTPUT
 
