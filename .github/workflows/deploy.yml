@@ -81,6 +81,7 @@ jobs:
         run: terraform init
 
       - name: Deploy backend to Cloud Run 
+        if: steps.check_backend.outputs.changed == 'true'
         working-directory: ./infra
         run: |
           terraform apply \
@@ -115,7 +116,8 @@ jobs:
           docker build --build-arg VITE_API_URL=${{ steps.backend_url.outputs.BACKEND_URL }}/api -t europe-west1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/cartwish-repo/frontend:${{ github.sha }} ./frontendJS
           docker push europe-west1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/cartwish-repo/frontend:${{ github.sha }}
 
-      - name: Deploy frontend to Cloud Run 
+      - name: Deploy frontend to Cloud Run
+        if: steps.check_frontend.outputs.changed == 'true' 
         working-directory: ./infra
         run: |
           terraform apply \
