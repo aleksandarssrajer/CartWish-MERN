@@ -29,11 +29,6 @@ jobs:
         with:
           workload_identity_provider: ${{secrets.WORKLOAD_IDENTITY_PROVIDER}}
           service_account: ${{secrets.SERVICE_ACCOUNT_EMAIL}}
-          
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
-        with:
-          terraform_version: 1.5.7
 
       - name: Setup Docker
         uses: docker/setup-buildx-action@v3
@@ -48,13 +43,16 @@ jobs:
           docker push europe-west1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/cartwish-repo/backend:latest
 
       - name: Terraform Init
+        working-directory: ./infra
         run: terraform init
 
       - name: Terraform Apply backend
+        working-directory: ./infra
         run: terraform apply -target=google_cloud_run_service.backend -auto-approve
 
       - name: Get backend URL
         id: backend_url
+        working-directory: ./infra
         run: |
           BACKEND_URL=$(terraform output -raw backend_url)
           echo "BACKEND_URL=$BACKEND_URL" >> $GITHUB_OUTPUT
@@ -68,7 +66,9 @@ jobs:
           docker push europe-west1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/cartwish-repo/frontend:latest
 
       - name: Terraform Apply frontend
+        working-directory: ./infra
         run: terraform apply -target=google_cloud_run_service.frontend -auto-approve
 
       - name: Output URLs
+        working-directory: ./infra
         run: terraform output
