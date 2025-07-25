@@ -124,6 +124,15 @@ jobs:
             -var="frontend_image_tag=${{ env.IMAGE_TAG }}" \
             -auto-approve
 
+      - name: Set frontend IAM (public access)
+        if: steps.check_frontend.outputs.changed == 'true'
+        working-directory: ./infra
+        run: |
+          terraform apply \
+            -target=google_cloud_run_service_iam_member.frontend_public \
+            -var="frontend_image_tag=${{ env.IMAGE_TAG }}" \
+            -auto-approve
+
       - name: Output Cloud Run URLs
         working-directory: ./infra
         run: terraform output
