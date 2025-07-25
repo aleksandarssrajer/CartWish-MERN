@@ -23,23 +23,27 @@ resource "google_cloud_run_service" "backend" {
       }
     }
   }
-  autogenerate_revision_name = true
-  # metadata {
-  #   annotations = {
-  #     "run.googleapis.com/ingress" = "internal-and-cloud-load-balancing"
-  #   }
-  # }
+  
+}
 
+resource "google_cloud_run_service_iam_member" "backend_public" {
+  location = google_cloud_run_service.backend.location
+  service  = google_cloud_run_service.backend.name
+  role     = "roles/run.invoker"
+  member   = "allUsers"
+
+  depends_on = [
+    google_cloud_run_service.backend
+  ]
 }
 
 # resource "google_cloud_run_service_iam_member" "backend_invoked_by_frontend" {
 #   location = google_cloud_run_service.backend.location
 #   service  = google_cloud_run_service.backend.name
 #   role     = "roles/run.invoker"
-#   member = "serviceAccount:${google_service_account.frontend_sa.email}"
+#   member   = "serviceAccount:YOUR_FRONTEND_SA_EMAIL"
 
 #   depends_on = [
-#     google_cloud_run_service.backend,
-#     google_service_account.frontend_sa
+#     google_cloud_run_service.backend
 #   ]
 # }

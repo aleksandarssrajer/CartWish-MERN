@@ -87,6 +87,15 @@ jobs:
             -target=google_cloud_run_service.backend \
             -var="backend_image_tag=${{ env.IMAGE_TAG }}" \
             -auto-approve
+
+      - name: Set backend IAM (public access)
+        if: steps.check_backend.outputs.changed == 'true'
+        working-directory: ./infra
+        run: |
+          terraform apply \
+            -target=google_cloud_run_service_iam_member.backend_public \
+            -var="backend_image_tag=${{ env.IMAGE_TAG }}" \
+            -auto-approve
 ###
       # - name: Debug terraform backend_url output
       #   working-directory: ./infra
