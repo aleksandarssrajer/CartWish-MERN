@@ -201,10 +201,4 @@ router.patch("/decrease/:productId", auth, async (req, res) => {
 });
 
 module.exports = router;
-//NEKI KOMENTAR
-//NOVI KOMENTAR
-//NOVI KOMENTAR
-//NOVI KOMENTAR XD
-//Ubicu se
-//NE KONTAM
-//AJDE 
+//DOBAR
