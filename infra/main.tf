@@ -37,14 +37,3 @@ module "frontend" {
   depends_on = [ module.backend ]
 }
 
-# resource "google_storage_bucket" "terraform_state" {
-#   name     = "cartwish-terraform-state"  # mora biti globalno jedinstveno
-#   location = "EU"
-#   force_destroy = true
-
-  
-
-#   versioning {
-#     enabled = true
-#   }
-# }
