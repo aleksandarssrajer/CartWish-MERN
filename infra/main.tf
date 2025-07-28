@@ -26,14 +26,12 @@ module "bootstrap" {
 }
 
 module "backend" {
-  source            = "./modules/backend"
-  backend_image_tag = var.backend_image_tag
-  depends_on = [ module.bootstrap ]
+  source     = "./modules/backend"
+  depends_on = [module.bootstrap]
 }
 
 module "frontend" {
-  source             = "./modules/frontend"
-  frontend_image_tag = var.frontend_image_tag
-  depends_on = [ module.backend ]
+  source     = "./modules/frontend"
+  depends_on = [module.backend]
 }
 
