@@ -23,7 +23,7 @@ variable "repo_name" {
   default     = "cartwish-repo"
 }
 
-variable "backend-bucket-name" {
+variable "backend_bucket_name" {
   description = "Bucket with tf state"
   type = string
   default = "cartwish-terraform-state"

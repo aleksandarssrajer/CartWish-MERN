@@ -34,7 +34,7 @@ resource "google_project_iam_member" "github_actions_sa" {
 }
 
 resource "google_storage_bucket_iam_member" "github_actions_storage" {
-  bucket = var.backend-bucket-name
+  bucket = var.backend_bucket_name
   role   = "roles/storage.objectAdmin"
   member = "serviceAccount:${google_service_account.github_actions.email}"
 }
