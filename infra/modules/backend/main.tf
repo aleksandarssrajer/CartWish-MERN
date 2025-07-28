@@ -23,7 +23,6 @@ resource "google_cloud_run_service" "backend" {
       }
     }
   }
-  
 }
 
 resource "google_cloud_run_service_iam_member" "backend_public" {
@@ -32,18 +31,5 @@ resource "google_cloud_run_service_iam_member" "backend_public" {
   role     = "roles/run.invoker"
   member   = "allUsers"
 
-  depends_on = [
-    google_cloud_run_service.backend
-  ]
+  depends_on = [google_cloud_run_service.backend]
 }
-
-# resource "google_cloud_run_service_iam_member" "backend_invoked_by_frontend" {
-#   location = google_cloud_run_service.backend.location
-#   service  = google_cloud_run_service.backend.name
-#   role     = "roles/run.invoker"
-#   member   = "serviceAccount:YOUR_FRONTEND_SA_EMAIL"
-
-#   depends_on = [
-#     google_cloud_run_service.backend
-#   ]
-# }

@@ -1,12 +1,18 @@
-output "backend_url" {
-  value = google_cloud_run_service.backend.status[0].url
-}
-
-output "frontend_url" {
-  value = google_cloud_run_service.frontend.status[0].url
+output "service_account_email" {
+  value = module.bootstrap.service_account_email
 }
 
 output "workload_identity_provider" {
-  description = "The Workload Identity Provider resource name for GitHub Actions."
-  value       = google_iam_workload_identity_pool_provider.github_provider.name
+  value = module.bootstrap.workload_identity_provider
+}
+
+output "artifact_registry_repo" {
+  value = module.bootstrap.artifact_registry_repo
+}
+
+output "backend_url" {
+  value = module.backend.backend_url
+}
+output "frontend_url" {
+  value = module.frontend.frontend_url
 }

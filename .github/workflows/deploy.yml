@@ -29,6 +29,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{secrets.WORKLOAD_IDENTITY_PROVIDER}}
+          service_account: ${{secrets.SERVICE_ACCOUNT_EMAIL}}
+
       - name: Check if backend changed
         id: check_backend
         run: |
@@ -48,14 +55,6 @@ jobs:
           else
             echo "changed=true" >> $GITHUB_OUTPUT
           fi
-
-  
-
-      - name: Authenicate to Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          workload_identity_provider: ${{secrets.WORKLOAD_IDENTITY_PROVIDER}}
-          service_account: ${{secrets.SERVICE_ACCOUNT_EMAIL}}
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
@@ -82,32 +81,7 @@ jobs:
       - name: Deploy backend to Cloud Run 
         if: steps.check_backend.outputs.changed == 'true'
         working-directory: ./infra
-        run: |
-          terraform apply \
-            -target=google_cloud_run_service.backend \
-            -var="backend_image_tag=${{ env.IMAGE_TAG }}" \
-            -auto-approve
-
-      - name: Set backend IAM (public access)
-        if: steps.check_backend.outputs.changed == 'true'
-        working-directory: ./infra
-        run: |
-          terraform apply \
-            -target=google_cloud_run_service_iam_member.backend_public \
-            -var="backend_image_tag=${{ env.IMAGE_TAG }}" \
-            -auto-approve
-###
-      # - name: Debug terraform backend_url output
-      #   working-directory: ./infra
-      #   run: terraform output backend_url || echo "Output backend_url does not exist" 
-
-      # - name: Get backend URL
-      #   id: backend_url
-      #   working-directory: ./infra
-      #   run: |
-      #     BACKEND_URL=$(terraform output -raw backend_url | grep -o 'https://[^: ]*')
-      #     url=$(echo "$BACKEND_URL" | head -n 1 | tr -d '\n\r')
-      #     echo "BACKEND_URL=$url" >> $GITHUB_OUTPUT
+        run: terraform apply -auto-approve -target=module.backend -var="backend_image_tag=${{ env.IMAGE_TAG }}"
 
       - name: Get current backend URL from Cloud Run
         id: backend_url
@@ -117,7 +91,6 @@ jobs:
             --format='value(status.url)')
           echo "BACKEND_URL=$url" >> $GITHUB_OUTPUT
 
-      
       - name: Build & Push frontend image with backend URL
         if: steps.check_frontend.outputs.changed == 'true'
         run: |
@@ -127,20 +100,8 @@ jobs:
       - name: Deploy frontend to Cloud Run
         if: steps.check_frontend.outputs.changed == 'true' 
         working-directory: ./infra
-        run: |
-          terraform apply \
-            -target=google_cloud_run_service.frontend \
-            -var="frontend_image_tag=${{ env.IMAGE_TAG }}" \
-            -auto-approve
+        run: terraform apply -auto-approve -target=module.frontend -var="frontend_image_tag=${{ env.IMAGE_TAG }}"
 
-      - name: Set frontend IAM (public access)
-        if: steps.check_frontend.outputs.changed == 'true'
-        working-directory: ./infra
-        run: |
-          terraform apply \
-            -target=google_cloud_run_service_iam_member.frontend_public \
-            -var="frontend_image_tag=${{ env.IMAGE_TAG }}" \
-            -auto-approve
 
       - name: Output Cloud Run URLs
         working-directory: ./infra

@@ -1,19 +1,32 @@
-# variable "project_id" {
-#   description = "GCP project ID"
-#   type        = string
-# }
+variable "project_id" {
+  description = "GCP Project ID"
+  type        = string
+  default     = "sara-sandbox-interns"
+}
 
-# variable "region" {
-#   description = "GCP region"
-#   type        = string
-#   default     = "europe-west1"
-# }
+variable "region" {
+  description = "GCP Region"
+  type        = string
+  default     = "europe-west1"
+}
 
-# variable "repo_name" {
-#   description = "Artifact Registry repo name"
-#   type        = string
-#   default     = "cartwish-repo"
-# }
+variable "bucket_name" {
+  description = "Name of the Terraform state bucket"
+  type        = string
+  default     = "cartwish-terraform-state"
+}
+
+variable "github_repo" {
+  description = "GitHub repository in org/repo format"
+  type        = string
+  default     = "aleksandarssrajer/CartWish-MERN"
+}
+
+variable "repo_name" {
+  description = "Artifact Registry repository name"
+  type        = string
+  default     = "cartwish-repo"
+}
 
 variable "backend_image_tag" {
   description = "Docker image tag for backend"
