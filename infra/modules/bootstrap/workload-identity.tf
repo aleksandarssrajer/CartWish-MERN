@@ -1,5 +1,5 @@
 resource "google_iam_workload_identity_pool" "git_pool" {
-  workload_identity_pool_id = "git-pool-115"
+  workload_identity_pool_id = "git-pool-120"
   display_name              = "GitHub Actions Pool"
 }
 

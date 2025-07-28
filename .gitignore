@@ -4,3 +4,13 @@ infra/.terraform.lock.hcl
 
 **/node_modules/
 **/.env
+*.tfstate
+*.tfstate.*
+
+# Terraform local directories and lock files
+.terraform/
+.terraform.lock.hcl
+
+# Optional: ako koristiš bootstrap-bucket folder i želiš da ignorišeš njegove terraform fajlove
+bootstrap-bucket/.terraform/
+bootstrap-bucket/*.tfstate*
