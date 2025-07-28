@@ -91,16 +91,16 @@ jobs:
             --format='value(status.url)')
           echo "BACKEND_URL=$url" >> $GITHUB_OUTPUT
 
-      - name: Build & Push frontend image with backend URL
-        if: steps.check_frontend.outputs.changed == 'true'
-        run: |
-          docker build --build-arg VITE_API_URL=${{ steps.backend_url.outputs.BACKEND_URL }}/api -t europe-west1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/cartwish-repo/frontend:${{ github.sha }} ./frontendJS
-          docker push europe-west1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/cartwish-repo/frontend:${{ github.sha }}
+      # - name: Build & Push frontend image with backend URL
+      #   if: steps.check_frontend.outputs.changed == 'true'
+      #   run: |
+      #     docker build --build-arg VITE_API_URL=${{ steps.backend_url.outputs.BACKEND_URL }}/api -t europe-west1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/cartwish-repo/frontend:${{ github.sha }} ./frontendJS
+      #     docker push europe-west1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/cartwish-repo/frontend:${{ github.sha }}
 
-      - name: Deploy frontend to Cloud Run
-        if: steps.check_frontend.outputs.changed == 'true' 
-        working-directory: ./infra
-        run: terraform apply -auto-approve -target=module.frontend -var="frontend_image_tag=${{ env.IMAGE_TAG }}"
+      # - name: Deploy frontend to Cloud Run
+      #   if: steps.check_frontend.outputs.changed == 'true' 
+      #   working-directory: ./infra
+      #   run: terraform apply -auto-approve -target=module.frontend -var="frontend_image_tag=${{ env.IMAGE_TAG }}"
 
 
       - name: Output Cloud Run URLs
