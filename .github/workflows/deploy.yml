@@ -36,15 +36,10 @@ jobs:
           workload_identity_provider: ${{secrets.WORKLOAD_IDENTITY_PROVIDER}}
           service_account: ${{secrets.SERVICE_ACCOUNT_EMAIL}}
 
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
-        with:
-          project_id: ${{ secrets.PROJECT_ID }}
-
-      - name: Activate Service Account for gsutil
+      - name: Test gsutil upload
         run: |
-          gcloud auth activate-service-account ${{ secrets.SERVICE_ACCOUNT_EMAIL }} --key-file=$GOOGLE_GHA_CREDS_PATH
-          gcloud config set project ${{ secrets.PROJECT_ID }}
+          echo "test" > testfile.txt
+          gsutil cp testfile.txt gs://cartwish-frontend-bucket-${{ secrets.PROJECT_ID }}/
 
 
       - name: Check if backend changed
