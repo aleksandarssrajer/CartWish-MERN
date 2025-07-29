@@ -13,7 +13,7 @@ env:
   REGION: europe-west1
   REPO_NAME: cartwish-repo
   BACKEND_NAME: cartwish-backend
-  FRONTEND_NAME: cartwish-frontend-${{ secrets.PROJECT_ID }}
+  FRONTEND_NAME: cartwish-frontend-bucket-${{ secrets.PROJECT_ID }}
   IMAGE_TAG: ${{ github.sha }}
 
 
@@ -110,6 +110,12 @@ jobs:
         if: steps.check_frontend.outputs.changed == 'true'
         working-directory: ./infra
         run: terraform apply -auto-approve -target=module.frontend
+
+      - name: Verify Google Cloud Authentication
+        if: steps.check_frontend.outputs.changed == 'true'
+        run: |
+          gcloud auth list
+          gcloud storage buckets list gs://$FRONTEND_BUCKET
 
       - name: Upload frontend to Cloud Storage
         if: steps.check_frontend.outputs.changed == 'true'
