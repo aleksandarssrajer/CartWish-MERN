@@ -36,10 +36,6 @@ jobs:
           workload_identity_provider: ${{secrets.WORKLOAD_IDENTITY_PROVIDER}}
           service_account: ${{secrets.SERVICE_ACCOUNT_EMAIL}}
 
-      - name: Configure gcloud CLI
-        run: |
-          gcloud config set project ${{ secrets.PROJECT_ID }}
-          gcloud auth activate-service-account ${{ secrets.SERVICE_ACCOUNT_EMAIL }} --key-file=${{ env.GOOGLE_APPLICATION_CREDENTIALS }}
 
       - name: Check if backend changed
         id: check_backend
