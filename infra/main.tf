@@ -32,8 +32,8 @@ module "backend" {
 }
 
 module "frontend" {
-  source             = "./modules/frontend"
-  frontend_image_tag = var.frontend_image_tag
-  # depends_on = [ module.backend ]
+  source       = "./modules/frontend"
+  project_id   = var.project_id
+  region       = var.region
+  backend_url  = module.backend.backend_url
 }
-

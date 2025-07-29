@@ -3,7 +3,7 @@ name: Deploy to GCP Cloud Run
 on:
   push:
     branches:
-      - main
+      - Front-CloudStorage
 
 permissions:
   id-token: write
@@ -13,7 +13,7 @@ env:
   REGION: europe-west1
   REPO_NAME: cartwish-repo
   BACKEND_NAME: cartwish-backend
-  FRONTEND_NAME: cartwish-frontend
+  FRONTEND_NAME: cartwish-frontend-${{ secrets.PROJECT_ID }}
   IMAGE_TAG: ${{ github.sha }}
 
 
@@ -91,19 +91,29 @@ jobs:
             --format='value(status.url)')
           echo "BACKEND_URL=$url" >> $GITHUB_OUTPUT
 
-      - name: Build & Push frontend image with backend URL
+      - name: Install Node.js
+        if: steps.check_frontend.outputs.changed == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Build frontend
+        if: steps.check_frontend.outputs.changed == 'true'
+        working-directory: ./frontendJS
+        run: |
+          npm install
+          npm run build -- --base=/ --env VITE_API_URL=${{ steps.backend_url.outputs.BACKEND_URL }}/api
+
+      - name: Deploy frontend bucket
+        if: steps.check_frontend.outputs.changed == 'true'
+        working-directory: ./infra
+        run: terraform apply -auto-approve -target=module.frontend
+
+      - name: Upload frontend to Cloud Storage
         if: steps.check_frontend.outputs.changed == 'true'
         run: |
-          docker build --build-arg VITE_API_URL=${{ steps.backend_url.outputs.BACKEND_URL }}/api -t europe-west1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/cartwish-repo/frontend:${{ github.sha }} ./frontendJS
-          docker push europe-west1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/cartwish-repo/frontend:${{ github.sha }}
+          gsutil -m rsync -r ./frontendJS/dist gs://cartwish-frontend-bucket-${{ secrets.PROJECT_ID }}/
 
-      - name: Deploy frontend to Cloud Run
-        if: steps.check_frontend.outputs.changed == 'true' 
-        working-directory: ./infra
-        run: terraform apply -auto-approve -target=module.frontend -var="frontend_image_tag=${{ env.IMAGE_TAG }}"
-
-
-      - name: Output Cloud Run URLs
+      - name: Output Cloud Run and Storage URLs
         working-directory: ./infra
         run: terraform output
-
