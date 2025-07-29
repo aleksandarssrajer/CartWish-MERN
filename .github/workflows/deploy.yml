@@ -3,7 +3,7 @@ name: Deploy to GCP Cloud Run and Cloud Storage
 on:
   push:
     branches:
-      - main
+      - Front-CloudStorage
 
 permissions:
   id-token: write
