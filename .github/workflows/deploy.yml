@@ -1,9 +1,9 @@
-name: Deploy to GCP Cloud Run
+name: Deploy to GCP Cloud Run and Cloud Storage
 
 on:
   push:
     branches:
-      - Front-CloudStorage
+      - main
 
 permissions:
   id-token: write
@@ -13,9 +13,8 @@ env:
   REGION: europe-west1
   REPO_NAME: cartwish-repo
   BACKEND_NAME: cartwish-backend
-  FRONTEND_NAME: cartwish-frontend-bucket-${{ secrets.PROJECT_ID }}
+  FRONTEND_BUCKET: cartwish-frontend-bucket-${{ secrets.PROJECT_ID }}
   IMAGE_TAG: ${{ github.sha }}
-
 
 jobs:
   deploy:
@@ -29,13 +28,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
-          workload_identity_provider: ${{secrets.WORKLOAD_IDENTITY_PROVIDER}}
-          service_account: ${{secrets.SERVICE_ACCOUNT_EMAIL}}
+          workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
 
+      - name: Activate Service Account
+        run: |
+          gcloud auth activate-service-account ${{ secrets.SERVICE_ACCOUNT_EMAIL }} --key-file=$GOOGLE_GHA_CREDS_PATH
 
       - name: Check if backend changed
         id: check_backend
@@ -63,9 +64,11 @@ jobs:
           terraform_version: 1.5.7
 
       - name: Setup Docker
+        if: steps.check_backend.outputs.changed == 'true'
         uses: docker/setup-buildx-action@v3
 
       - name: Configure Docker for Artifact Registry
+        if: steps.check_backend.outputs.changed == 'true'
         run: |
           gcloud auth configure-docker europe-west1-docker.pkg.dev
 
@@ -79,7 +82,7 @@ jobs:
         working-directory: ./infra
         run: terraform init
 
-      - name: Deploy backend to Cloud Run 
+      - name: Deploy backend to Cloud Run
         if: steps.check_backend.outputs.changed == 'true'
         working-directory: ./infra
         run: terraform apply -auto-approve -target=module.backend -var="backend_image_tag=${{ env.IMAGE_TAG }}"
@@ -121,7 +124,11 @@ jobs:
       - name: Upload frontend to Cloud Storage
         if: steps.check_frontend.outputs.changed == 'true'
         run: |
-          gsutil -m rsync -r ./frontendJS/dist gs://cartwish-frontend-bucket-${{ secrets.PROJECT_ID }}/
+          if [ ! -d "./frontendJS/dist" ]; then
+            echo "Error: dist directory not found"
+            exit 1
+          fi
+          gsutil -m rsync -r ./frontendJS/dist gs://$FRONTEND_BUCKET/
 
       - name: Output Cloud Run and Storage URLs
         working-directory: ./infra
