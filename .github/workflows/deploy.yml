@@ -100,9 +100,11 @@ jobs:
       - name: Build frontend
         if: steps.check_frontend.outputs.changed == 'true'
         working-directory: ./frontendJS
+        env:
+          VITE_API_URL: ${{ steps.backend_url.outputs.BACKEND_URL }}/api
         run: |
-          npm install
-          npm run build -- --base=/ --env VITE_API_URL=${{ steps.backend_url.outputs.BACKEND_URL }}/api
+          npm ci
+          npm run build -- --base=/
 
       - name: Deploy frontend bucket
         if: steps.check_frontend.outputs.changed == 'true'
