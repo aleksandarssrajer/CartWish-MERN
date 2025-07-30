@@ -37,15 +37,6 @@ jobs:
           workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
 
-      - name: Activate gcloud credentials for gsutil
-        run: |
-          gcloud auth activate-service-account --key-file="${{ steps.auth.outputs.credentials_file_path }}"
-
-      - name: Test gsutil access
-        run: |
-          echo "test" > testfile.txt
-          gsutil cp testfile.txt gs://cartwish-frontend-bucket-${{ secrets.PROJECT_ID }}/
-
 
       - name: Check if backend changed
         id: check_backend
@@ -126,7 +117,7 @@ jobs:
       - name: Upload frontend to Cloud Storage
         if: steps.check_frontend.outputs.changed == 'true'
         run: |
-          gsutil -m rsync -r ./frontendJS/dist gs://cartwish-frontend-bucket-${{ secrets.PROJECT_ID }}/
+          gcloud storage cp --recursive ./frontendJS/dist gs://cartwish-frontend-bucket-${{ secrets.PROJECT_ID }}/
 
       - name: Output Cloud Run and Storage URLs
         working-directory: ./infra
