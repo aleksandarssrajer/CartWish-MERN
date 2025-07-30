@@ -11,7 +11,10 @@ resource "google_project_iam_member" "github_deploy_permissions" {
     "roles/iam.serviceAccountUser",
     "roles/viewer",
     "roles/iam.workloadIdentityPoolAdmin",
-    "roles/iam.serviceAccountTokenCreator"
+    "roles/iam.serviceAccountTokenCreator",
+    "roles/compute.networkAdmin",
+    "roles/compute.loadBalancerAdmin",
+    "roles/compute.securityAdmin"
   ])
 
   role    = each.key
