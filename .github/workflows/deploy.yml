@@ -109,7 +109,7 @@ jobs:
           npm ci
           npm run build 
 
-      - name: Deploy frontend bucket
+      - name: Deploy frontend bucket and Load Balancer
         if: steps.check_frontend.outputs.changed == 'true'
         working-directory: ./infra
         run: terraform apply -auto-approve -target=module.frontend

@@ -18,3 +18,9 @@ variable "backend_url" {
   description = "Backend API URL"
   type        = string
 }
+
+variable "domain_name" {
+  description = "Public domain for frontend (e.g. www.example.com)"
+  type        = string
+  default = "cartwish.gcp.com"
+}
