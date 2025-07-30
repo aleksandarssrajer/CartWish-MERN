@@ -19,6 +19,8 @@ resource "google_compute_backend_bucket" "frontend_backend_bucket" {
 resource "google_compute_url_map" "frontend_url_map" {
   name = "frontend-url-map"
 
+  default_service = google_compute_backend_bucket.frontend_backend_bucket.id
+
   host_rule {
     hosts        = [var.domain_name] # Ili [var.domain_name] ako koristiš custom domen
     path_matcher = "allpaths"
@@ -26,11 +28,11 @@ resource "google_compute_url_map" "frontend_url_map" {
 
   path_matcher {
     name            = "allpaths"
-    default_service = google_compute_backend_bucket.frontend_backend_bucket.self_link
+    default_service = google_compute_backend_bucket.frontend_backend_bucket.id
 
     path_rule {
       paths   = ["/*"]
-      service = google_compute_backend_bucket.frontend_backend_bucket.self_link
+      service = google_compute_backend_bucket.frontend_backend_bucket.id
     }
   }
 }
