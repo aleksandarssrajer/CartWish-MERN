@@ -36,11 +36,6 @@ jobs:
           workload_identity_provider: ${{secrets.WORKLOAD_IDENTITY_PROVIDER}}
           service_account: ${{secrets.SERVICE_ACCOUNT_EMAIL}}
 
-      - name: Test gsutil upload
-        run: |
-          echo "test" > testfile.txt
-          gsutil cp testfile.txt gs://cartwish-frontend-bucket-${{ secrets.PROJECT_ID }}/
-
 
       - name: Check if backend changed
         id: check_backend
