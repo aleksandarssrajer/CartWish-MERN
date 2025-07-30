@@ -20,7 +20,7 @@ resource "google_compute_url_map" "frontend_url_map" {
   name = "frontend-url-map"
 
   host_rule {
-    hosts        = ["*"] # Ili [var.domain_name] ako koristiš custom domen
+    hosts        = [var.domain_name] # Ili [var.domain_name] ako koristiš custom domen
     path_matcher = "allpaths"
   }
 
