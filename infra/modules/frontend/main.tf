@@ -37,10 +37,13 @@ resource "google_storage_bucket" "frontend_bucket" {
 
    cors {
     origin          = ["*"]
-    method          = ["GET", "POST", "PUT", "DELET", "PATCH", "HEAD"]
+    method          = ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD"]
     response_header = ["*"]
     max_age_seconds = 3600
   }
+
+  uniform_bucket_level_access = true  # obavezno da bi IAM politika važila
+
 }
 resource "google_storage_bucket_iam_member" "public_access" {
   bucket = google_storage_bucket.frontend_bucket.name
