@@ -1,3 +1,3 @@
 output "frontend_url" {
-  value = "https://storage.googleapis.com/${google_storage_bucket.frontend_bucket.name}/index.html"
+  value = "https://storage.googleapis.com/${google_storage_bucket.frontend_bucket.name}/"
 }
