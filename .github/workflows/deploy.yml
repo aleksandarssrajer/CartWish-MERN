@@ -108,7 +108,7 @@ jobs:
           VITE_BASE_PATH: /cartwish-frontend-bucket-${{ secrets.PROJECT_ID }}/
         run: |
           npm ci
-          npm run build -- --base=/
+          npm run build 
 
       - name: Deploy frontend bucket
         if: steps.check_frontend.outputs.changed == 'true'
