@@ -16,10 +16,22 @@ resource "google_compute_backend_bucket" "frontend_backend_bucket" {
 }
 
 resource "google_compute_url_map" "frontend_url_map" {
-  name            = "frontend-url-map"
-  default_service = google_compute_backend_bucket.frontend_backend_bucket.id
+  name = "frontend-url-map"
 
-  depends_on = [google_compute_backend_bucket.frontend_backend_bucket]
+  host_rule {
+    hosts        = [var.domain_name]
+    path_matcher = "frontend-path-matcher"
+  }
+
+  path_matcher {
+    name            = "frontend-path-matcher"
+    default_service = google_compute_backend_bucket.frontend_backend_bucket.id
+
+    path_rule {
+      paths   = ["/*"]
+      service = google_compute_backend_bucket.frontend_backend_bucket.id
+    }
+  }
 }
 
 
