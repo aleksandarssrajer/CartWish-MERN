@@ -15,7 +15,8 @@ services:
     ports:
       - "5000:5000"
     environment:
-      - DATABASE=mongodb://mongo:27017/cartwish
+      # - DATABASE=mongodb://mongo:27017/cartwish
+      - DATABASE=mongodb+srv://aleksandarsrajer:aleksandarsrajer@cartwishcluster.jtpr4rz.mongodb.net/?retryWrites=true&w=majority&appName=CartWishCluster
       - JWTSECRET=cartwish_secret
     depends_on:
       - mongo

@@ -104,21 +104,20 @@ jobs:
         working-directory: ./frontendJS
         env:
           VITE_API_URL: ${{ steps.backend_url.outputs.BACKEND_URL }}/api
-          VITE_BASE_PATH: /cartwish-frontend-bucket-${{ secrets.PROJECT_ID }}/
         run: |
           npm ci
           npm run build 
 
-      - name: Deploy frontend bucket and Load Balancer
+      - name: Deploy frontend bucket
         if: steps.check_frontend.outputs.changed == 'true'
         working-directory: ./infra
         run: terraform apply -auto-approve -target=module.frontend
 
 
       - name: Upload frontend to Cloud Storage
-        if: steps.check_frontend.outputs.changed == 'true'
         run: |
-          gcloud storage cp --recursive ./frontendJS/dist gs://cartwish-frontend-bucket-${{ secrets.PROJECT_ID }}/
+          echo "Uploading frontend files to GCS..."
+          gcloud storage cp --recursive ./frontendJS/dist/* gs://cartwish-frontend-bucket-${{ secrets.PROJECT_ID }}
 
       - name: Output Cloud Run and Storage URLs
         working-directory: ./infra
