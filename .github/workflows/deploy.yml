@@ -90,7 +90,8 @@ jobs:
         run: |
           TF_APPLY_COMMAND="terraform apply -auto-approve"
           if [ "${{ steps.changes.outputs.backend_changed }}" == "true" ]; then
-            TF_APPLY_COMMAND="$TF_APPLY_COMMAND -var=\"backend_image_tag=${{ env.IMAGE_TAG }}\""
+            echo "Applying with new backend image tag: ${{ env.IMAGE_TAG }}"
+            TF_APPLY_COMMAND="$TF_APPLY_COMMAND -var='backend_image_tag=${{ env.IMAGE_TAG }}'"
           fi
           $TF_APPLY_COMMAND
         working-directory: ./infra
