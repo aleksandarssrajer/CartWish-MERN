@@ -79,11 +79,9 @@ jobs:
         
       # --- Terraform (ako treba) ---
       - name: Setup Terraform
-        if: steps.changes.outputs.backend_changed == 'true' || steps.changes.outputs.infra_changed == 'true'
         uses: hashicorp/setup-terraform@v3
 
       - name: Terraform Init
-        if: steps.changes.outputs.backend_changed == 'true' || steps.changes.outputs.infra_changed == 'true'
         run: terraform init
         working-directory: ./infra
 
