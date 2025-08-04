@@ -1,14 +1,18 @@
+# Ime workflow-a
 name: Deploy to GCP
 
+# Trigger: Pokreće se na push na granu 'Front-CloudStorage'
 on:
   push:
     branches:
       - Front-CloudStorage
 
+# Dozvole potrebne za autentifikaciju na GCP
 permissions:
   id-token: write
   contents: read
 
+# Globalne environment varijable
 env:
   REGION: europe-west1
   REPO_NAME: cartwish-repo
@@ -23,6 +27,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          # Preuzimamo celu istoriju da bi git diff radio pouzdano
+          fetch-depth: 0 
 
       - name: Authenticate to Google Cloud
         id: auth
@@ -31,17 +38,29 @@ jobs:
           workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
 
-      # 1. AŽURIRANA PROVERA: Sada pratimo i 'infra' folder
+      # 1. POUZDANA PROVERA PROMENA KORISTEĆI TVOJ PRISTUP
       - name: Check for file changes
         id: changes
-        uses: tj-actions/changed-files@v44
-        with:
-          backend_changed: |
-            backend/**
-          frontend_changed: |
-            frontendJS/**
-          infra_changed: |
-            infra/**
+        run: |
+          echo "Checking for changes between ${{ github.event.before }} and ${{ github.event.after }}"
+          # Proveravamo backend
+          if git diff --quiet ${{ github.event.before }} ${{ github.event.after }} -- ./backend; then
+            echo "backend_changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "backend_changed=true" >> $GITHUB_OUTPUT
+          fi
+          # Proveravamo frontend
+          if git diff --quiet ${{ github.event.before }} ${{ github.event.after }} -- ./frontendJS; then
+            echo "frontend_changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "frontend_changed=true" >> $GITHUB_OUTPUT
+          fi
+          # Proveravamo infra
+          if git diff --quiet ${{ github.event.before }} ${{ github.event.after }} -- ./infra; then
+            echo "infra_changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "infra_changed=true" >> $GITHUB_OUTPUT
+          fi
 
       # --- Backend Build (ako treba) ---
       - name: Setup Docker & Buildx
@@ -55,7 +74,6 @@ jobs:
       - name: Build and Push backend image
         if: steps.changes.outputs.backend_changed == 'true'
         run: |
-          echo "Backend files changed. Building and pushing new image..."
           docker build -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/backend:${{ env.IMAGE_TAG }} ./backend
           docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/backend:${{ env.IMAGE_TAG }}
         
@@ -70,26 +88,22 @@ jobs:
         working-directory: ./infra
 
       - name: Terraform Apply
-        # 2. AŽURIRAN USLOV: Pokreni apply samo ako se menjao backend ILI infra
         if: steps.changes.outputs.backend_changed == 'true' || steps.changes.outputs.infra_changed == 'true'
         run: |
           TF_APPLY_COMMAND="terraform apply -auto-approve"
           if [ "${{ steps.changes.outputs.backend_changed }}" == "true" ]; then
             TF_APPLY_COMMAND="$TF_APPLY_COMMAND -var=\"backend_image_tag=${{ env.IMAGE_TAG }}\""
           fi
-          echo "Running command: $TF_APPLY_COMMAND"
           $TF_APPLY_COMMAND
         working-directory: ./infra
 
       # --- Frontend Build & Upload (ako treba) ---
       - name: Get GCS Bucket Name
-        # Ovaj korak mora uvek da se pokrene ako se frontend menjao, da bismo znali gde da upload-ujemo
         if: steps.changes.outputs.frontend_changed == 'true'
         id: get_bucket_name
         run: |
-          # Inicijalizujemo Terraform samo da bismo mogli da pročitamo output
           cd ./infra
-          terraform init -backend=false # Brza inicijalizacija bez provere bekenda
+          terraform init
           echo "bucket_name=$(terraform output -raw frontend_bucket_name)" >> $GITHUB_OUTPUT
           cd ..
 
