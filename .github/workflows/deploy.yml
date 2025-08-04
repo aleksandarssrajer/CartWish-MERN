@@ -1,4 +1,4 @@
-name: Deploy to GCP Cloud Run
+name: Deploy to GCP
 
 on:
   push:
@@ -12,23 +12,17 @@ permissions:
 env:
   REGION: europe-west1
   REPO_NAME: cartwish-repo
-  BACKEND_NAME: cartwish-backend
-  FRONTEND_NAME: cartwish-frontend-bucket-${{ secrets.PROJECT_ID }}
+  PROJECT_ID: ${{ secrets.PROJECT_ID }}
   IMAGE_TAG: ${{ github.sha }}
 
-
 jobs:
-  deploy:
-    name: Build & Deploy
+  build-and-deploy:
+    name: Build & Deploy to GCP
     runs-on: ubuntu-latest
-    outputs:
-      backend_changed: ${{ steps.check_backend.outputs.changed }}
-      frontend_changed: ${{ steps.check_frontend.outputs.changed }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
 
       - name: Authenticate to Google Cloud
         id: auth
@@ -37,88 +31,83 @@ jobs:
           workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
 
-
-      - name: Check if backend changed
-        id: check_backend
-        run: |
-          git fetch origin main --depth=2
-          if git diff --quiet HEAD^ HEAD -- backend; then
-            echo "changed=false" >> $GITHUB_OUTPUT
-          else
-            echo "changed=true" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Check if frontend changed
-        id: check_frontend
-        run: |
-          git fetch origin main --depth=2
-          if git diff --quiet HEAD^ HEAD -- frontendJS; then
-            echo "changed=false" >> $GITHUB_OUTPUT
-          else
-            echo "changed=true" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
+      # 1. AŽURIRANA PROVERA: Sada pratimo i 'infra' folder
+      - name: Check for file changes
+        id: changes
+        uses: tj-actions/changed-files@v44
         with:
-          terraform_version: 1.5.7
+          backend_changed: |
+            backend/**
+          frontend_changed: |
+            frontendJS/**
+          infra_changed: |
+            infra/**
 
-      - name: Setup Docker
+      # --- Backend Build (ako treba) ---
+      - name: Setup Docker & Buildx
+        if: steps.changes.outputs.backend_changed == 'true'
         uses: docker/setup-buildx-action@v3
 
       - name: Configure Docker for Artifact Registry
-        run: |
-          gcloud auth configure-docker europe-west1-docker.pkg.dev
+        if: steps.changes.outputs.backend_changed == 'true'
+        run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev
 
-      - name: Build & Push backend image
-        if: steps.check_backend.outputs.changed == 'true'
+      - name: Build and Push backend image
+        if: steps.changes.outputs.backend_changed == 'true'
         run: |
-          docker build -t europe-west1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/cartwish-repo/backend:${{ env.IMAGE_TAG }} ./backend
-          docker push europe-west1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/cartwish-repo/backend:${{ env.IMAGE_TAG }}
+          echo "Backend files changed. Building and pushing new image..."
+          docker build -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/backend:${{ env.IMAGE_TAG }} ./backend
+          docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/backend:${{ env.IMAGE_TAG }}
+        
+      # --- Terraform (ako treba) ---
+      - name: Setup Terraform
+        if: steps.changes.outputs.backend_changed == 'true' || steps.changes.outputs.infra_changed == 'true'
+        uses: hashicorp/setup-terraform@v3
 
       - name: Terraform Init
-        working-directory: ./infra
+        if: steps.changes.outputs.backend_changed == 'true' || steps.changes.outputs.infra_changed == 'true'
         run: terraform init
-
-      - name: Deploy backend to Cloud Run 
-        if: steps.check_backend.outputs.changed == 'true'
         working-directory: ./infra
-        run: terraform apply -auto-approve -target=module.backend -var="backend_image_tag=${{ env.IMAGE_TAG }}"
 
-      - name: Get current backend URL from Cloud Run
-        id: backend_url
+      - name: Terraform Apply
+        # 2. AŽURIRAN USLOV: Pokreni apply samo ako se menjao backend ILI infra
+        if: steps.changes.outputs.backend_changed == 'true' || steps.changes.outputs.infra_changed == 'true'
         run: |
-          url=$(gcloud run services describe ${{ env.BACKEND_NAME }} \
-            --region ${{ env.REGION }} \
-            --format='value(status.url)')
-          echo "BACKEND_URL=$url" >> $GITHUB_OUTPUT
+          TF_APPLY_COMMAND="terraform apply -auto-approve"
+          if [ "${{ steps.changes.outputs.backend_changed }}" == "true" ]; then
+            TF_APPLY_COMMAND="$TF_APPLY_COMMAND -var=\"backend_image_tag=${{ env.IMAGE_TAG }}\""
+          fi
+          echo "Running command: $TF_APPLY_COMMAND"
+          $TF_APPLY_COMMAND
+        working-directory: ./infra
 
-      - name: Install Node.js
-        if: steps.check_frontend.outputs.changed == 'true'
+      # --- Frontend Build & Upload (ako treba) ---
+      - name: Get GCS Bucket Name
+        # Ovaj korak mora uvek da se pokrene ako se frontend menjao, da bismo znali gde da upload-ujemo
+        if: steps.changes.outputs.frontend_changed == 'true'
+        id: get_bucket_name
+        run: |
+          # Inicijalizujemo Terraform samo da bismo mogli da pročitamo output
+          cd ./infra
+          terraform init -backend=false # Brza inicijalizacija bez provere bekenda
+          echo "bucket_name=$(terraform output -raw frontend_bucket_name)" >> $GITHUB_OUTPUT
+          cd ..
+
+      - name: Setup Node.js
+        if: steps.changes.outputs.frontend_changed == 'true'
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
 
       - name: Build frontend
-        if: steps.check_frontend.outputs.changed == 'true'
-        working-directory: ./frontendJS
-        env:
-          VITE_API_URL: ${{ steps.backend_url.outputs.BACKEND_URL }}/api
+        if: steps.changes.outputs.frontend_changed == 'true'
         run: |
           npm ci
-          npm run build 
+          npm run build
+        working-directory: ./frontendJS
 
-      - name: Deploy frontend bucket
-        if: steps.check_frontend.outputs.changed == 'true'
-        working-directory: ./infra
-        run: terraform apply -auto-approve -target=module.frontend
-
-
-      - name: Upload frontend to Cloud Storage
+      - name: Upload frontend to GCS
+        if: steps.changes.outputs.frontend_changed == 'true'
         run: |
-          echo "Uploading frontend files to GCS..."
-          gcloud storage cp --recursive ./frontendJS/dist/* gs://cartwish-frontend-bucket-${{ secrets.PROJECT_ID }}
-
-      - name: Output Cloud Run and Storage URLs
-        working-directory: ./infra
-        run: terraform output
+          gcloud storage cp -r ./dist/* gs://${{ steps.get_bucket_name.outputs.bucket_name }}/
+        working-directory: ./frontendJS

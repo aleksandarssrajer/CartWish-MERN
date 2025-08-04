@@ -23,9 +23,9 @@ const orderRoutes = require("./routes/order");
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use("/category", express.static(__dirname + "/upload/category"));
-app.use("/profile", express.static(__dirname + "/upload/profiles"));
-app.use("/products", express.static(__dirname + "/upload/products"));
+app.use("/static/category", express.static(__dirname + "/upload/category"));
+app.use("/static/profile", express.static(__dirname + "/upload/profiles"));
+app.use("/static/products", express.static(__dirname + "/upload/products"));
 
 // adding routes
 app.use("/api/user", userRoutes);

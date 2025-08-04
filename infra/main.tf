@@ -35,5 +35,12 @@ module "frontend" {
   source       = "./modules/frontend"
   project_id   = var.project_id
   region       = var.region
-  backend_url  = module.backend.backend_url
+}
+
+module "loadbalancer" {
+  source                   = "./modules/loadbalancer"
+  project_id               = var.project_id 
+  frontend_bucket_name     = module.frontend.frontend_bucket_name
+  backend_service_name     = module.backend.backend_service_name
+  backend_service_location = var.region
 }

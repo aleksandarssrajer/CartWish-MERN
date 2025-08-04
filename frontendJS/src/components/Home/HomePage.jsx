@@ -3,8 +3,10 @@ import HeroSection from './HeroSection';
 import iphone from '../../assets/iphone-14-pro.webp';
 import mac from '../../assets/mac-system-cut.jfif';
 import FeaturedProducts from './FeaturedProducts';
+import apiClient from '../../utils/api-client';
 
 const HomePage = () => {
+  console.log(apiClient.defaults.baseURL); // Check the base URL for debugging
   return (
     <div>
       <HeroSection

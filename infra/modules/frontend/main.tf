@@ -25,39 +25,18 @@
 # }
 
 resource "google_storage_bucket" "frontend_bucket" {
-  name = "cartwish-frontend-bucket-${var.project_id}"
-  project = var.project_id
-  location = var.region
+  name          = "cartwish-frontend-bucket-${var.project_id}"
+  location      = var.region
   force_destroy = true
+  uniform_bucket_level_access = true
 
   website {
     main_page_suffix = "index.html"
     not_found_page   = "index.html"
   }
 
-   cors {
-    origin          = ["*"]
-    method          = ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD"]
-    response_header = ["*"]
-    max_age_seconds = 3600
-  }
-
-  uniform_bucket_level_access = true  # obavezno da bi IAM politika važila
-
 }
 
-# resource "google_storage_bucket_object" "site_src" {
-#   name = "index.html"
-#   source = "${path.module}/../../frontendJS/dist"
-#   bucket = google_storage_bucket.frontend_bucket.name
-# }
-
-# resource "google_storage_object_access_control" "public_rule" {
-#   object = google_storage_bucket_object.site_src.name
-#   bucket = google_storage_bucket.frontend_bucket.name
-#   role = "READER"
-#   entity = "allUsers"
-# }
 
 resource "google_storage_bucket_iam_member" "public_access" {
   bucket = google_storage_bucket.frontend_bucket.name

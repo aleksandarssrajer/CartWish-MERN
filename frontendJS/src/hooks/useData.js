@@ -9,6 +9,7 @@ const useData = (endpoint, customConfig, deps) => {
   useEffect(
     () => {
       setIsLoading(true);
+      console.log(apiClient.defaults.baseURL);
       apiClient
         .get(endpoint, customConfig)
         .then((res) => {

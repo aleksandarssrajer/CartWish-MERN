@@ -14,6 +14,15 @@ output "backend_url" {
   value = module.backend.backend_url
 }
 
+output "frontend_bucket_name" {
+  description = "Name of the GCS bucket used for hosting"
+  value       = module.frontend.frontend_bucket_name
+}
+
+output "lb_ip_address"{
+  description = "Global static IP address for the load balancer"
+  value       = module.loadbalancer.lb_ip_address
+}
 # output "frontend_static_ip" {
 #   description = "Global static IP address from frontend module"
 #   value       = module.frontend.frontend_static_ip
@@ -24,10 +33,6 @@ output "backend_url" {
 #   value       = module.frontend.frontend_bucket_url
 # }
 
-output "frontend_bucket_name" {
-  description = "Name of the GCS bucket used for hosting"
-  value       = module.frontend.frontend_bucket_name
-}
 
 # output "frontend_ssl_domains" {
 #   description = "List of domains covered by the managed SSL certificate"
