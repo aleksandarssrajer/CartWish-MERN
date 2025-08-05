@@ -10,6 +10,11 @@ resource "google_cloud_run_service" "frontend" {
         ports {
           container_port = 80
         }
+
+        env {
+          name  = "VITE_API_URL"
+          value = "${var.backend_api_url}/api" # Dodajemo /api sufiks ako je potreban
+        }
       }
     }
   }

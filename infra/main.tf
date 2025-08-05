@@ -34,6 +34,6 @@ module "backend" {
 module "frontend" {
   source             = "./modules/frontend"
   frontend_image_tag = var.frontend_image_tag
-  # depends_on = [ module.backend ]
+  backend_api_url = module.backend.backend_url
 }
 
