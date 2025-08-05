@@ -12,6 +12,7 @@ permissions:
 env:
   REGION: europe-west1
   REPO_NAME: cartwish-repo
+  PROJECT_ID: sara-sandbox-interns
   BACKEND_NAME: cartwish-backend
   FRONTEND_NAME: cartwish-frontend
   IMAGE_TAG: ${{ github.sha }}
