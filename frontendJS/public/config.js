@@ -1,1 +1,1 @@
-window.VITE_API_URL = "%%VITE_API_URL%%";
+window.VITE_API_URL = "%%API_URL_PLACEHOLDER%%";
