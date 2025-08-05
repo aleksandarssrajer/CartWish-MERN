@@ -19,7 +19,7 @@ const Navbar = () => {
   return (
     <nav className=" align_center navbar">
       <div className="align_center">
-        <h1 className="navbar_heading">CartWishSmara</h1>
+        <h1 className="navbar_heading">CartWishS</h1>
         <form className="align_center navbar_form">
           <input
             type="text"
