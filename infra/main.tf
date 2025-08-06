@@ -31,9 +31,9 @@ module "backend" {
   depends_on = [ module.bootstrap ]
 }
 
-module "frontend" {
-  source             = "./modules/frontend"
-  frontend_image_tag = var.frontend_image_tag
-  backend_api_url = module.backend.backend_url
-}
+# module "frontend" {
+#   source             = "./modules/frontend"
+#   frontend_image_tag = var.frontend_image_tag
+#   backend_api_url = module.backend.backend_url
+# }
 

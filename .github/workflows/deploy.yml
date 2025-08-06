@@ -3,7 +3,7 @@ name: Deploy to GCP Cloud Run
 on:
   push:
     branches:
-      - testing-main
+      - firebase
 
 permissions:
   id-token: write
@@ -14,8 +14,11 @@ env:
   REPO_NAME: cartwish-repo
   PROJECT_ID: sara-sandbox-interns
   BACKEND_NAME: cartwish-backend
-  FRONTEND_NAME: cartwish-frontend
+  BACKEND_IMAGE_NAME: backend
   IMAGE_TAG: ${{ github.sha }}
+  TERRAFORM_WORKING_DIR: ./infra # Ispravite putanju do vašeg terraform koda
+  BACKEND_WORKING_DIR: ./backend # Ispravite putanju do vašeg backend koda
+  FRONTEND_WORKING_DIR: ./frontendJS # Ispravite putanju do vašeg frontend koda
 
 
 jobs:
@@ -34,102 +37,113 @@ jobs:
           workload_identity_provider: ${{secrets.WORKLOAD_IDENTITY_PROVIDER}}
           service_account: ${{secrets.SERVICE_ACCOUNT_EMAIL}}
 
-      - name: Check for backend changes using git diff
-        id: check_backend
-        run: |
-          echo "Proveravaju se promene u 'backend' folderu..."
-          # git diff --quiet izlazi sa kodom 1 ako ima promena, a 0 ako nema
-          if git diff --quiet HEAD^ HEAD -- backend/; then
-            echo "Nema promena u backend-u."
-            echo "backend=false" >> $GITHUB_OUTPUT
-          else
-            echo "Pronađene promene u backend-u."
-            echo "backend=true" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Check for frontend changes using git diff
-        id: check_frontend
-        run: |
-          echo "Proveravaju se promene u 'frontendJS' folderu..."
-          if git diff --quiet HEAD^ HEAD -- frontendJS/; then
-            echo "Nema promena u frontend-u."
-            echo "frontend=false" >> $GITHUB_OUTPUT
-          else
-            echo "Pronađene promene u frontend-u."
-            echo "frontend=true" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
-        with:
-          terraform_version: 1.5.7
-
       - name: Setup Docker
         uses: docker/setup-buildx-action@v3
 
       - name: Configure Docker for Artifact Registry
         run: |
-          gcloud auth configure-docker europe-west1-docker.pkg.dev
+           gcloud auth configure-docker europe-west1-docker.pkg.dev
+      
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.7
 
-      - name: Set Backend Image Tag
-        id: set_backend_tag
+      - name: Build and Push Backend Docker Image
         run: |
-          if [[ "${{ steps.check_backend.outputs.backend }}" == "true" ]]; then
-            echo "Kreira se novi tag za backend."
-            echo "tag=${{ env.IMAGE_TAG }}" >> $GITHUB_OUTPUT
-          else
-            echo "Nema promena za backend. Preuzima se trenutni tag."
-            CURRENT_IMAGE=$(gcloud run services describe ${{ env.BACKEND_NAME }} --region ${{ env.REGION }} --format 'value(template.spec.containers[0].image)' --project ${{ steps.get_project_id.outputs.project_id }} || echo "")
-            if [[ -z "$CURRENT_IMAGE" ]]; then
-              echo "tag=${{ env.IMAGE_TAG }}" >> $GITHUB_OUTPUT
-            else
-              CURRENT_TAG=$(echo $CURRENT_IMAGE | cut -d':' -f2)
-              echo "tag=$CURRENT_TAG" >> $GITHUB_OUTPUT
-            fi
-          fi
+          docker build -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/${{ env.BACKEND_IMAGE_NAME }}:${{ env.IMAGE_TAG }} ${{ env.BACKEND_WORKING_DIR }}
+          docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/${{ env.BACKEND_IMAGE_NAME }}:${{ env.IMAGE_TAG }}    
 
-      - name: Build & Push backend image
-        if: steps.check_backend.outputs.backend == 'true' || steps.set_backend_tag.outputs.tag == env.IMAGE_TAG
-        run: |
-          docker build -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/backend:${{ steps.set_backend_tag.outputs.tag }} ./backend
-          docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/backend:${{ steps.set_backend_tag.outputs.tag }}
-
-      - name: Set Frontend Image Tag
-        id: set_frontend_tag
-        run: |
-          if [[ "${{ steps.check_frontend.outputs.frontend }}" == "true" ]]; then
-            echo "Kreira se novi tag za frontend."
-            echo "tag=${{ env.IMAGE_TAG }}" >> $GITHUB_OUTPUT
-          else
-            echo "Nema promena za frontend. Preuzima se trenutni tag."
-            CURRENT_IMAGE=$(gcloud run services describe ${{ env.FRONTEND_NAME }} --region ${{ env.REGION }} --format 'value(template.spec.containers[0].image)' --project ${{ steps.get_project_id.outputs.project_id }} || echo "")
-            if [[ -z "$CURRENT_IMAGE" ]]; then
-              echo "tag=${{ env.IMAGE_TAG }}" >> $GITHUB_OUTPUT
-            else
-              CURRENT_TAG=$(echo $CURRENT_IMAGE | cut -d':' -f2)
-              echo "tag=$CURRENT_TAG" >> $GITHUB_OUTPUT
-            fi
-          fi
-
-      - name: Build & Push frontend image
-        if: steps.check_frontend.outputs.frontend == 'true' || steps.set_frontend_tag.outputs.tag == env.IMAGE_TAG
-        run: |
-          docker build -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/frontend:${{ steps.set_frontend_tag.outputs.tag }} ./frontendJS
-          docker push ${{ env.REGION }}-docker.pkg.dev/${{env.PROJECT_ID }}/${{ env.REPO_NAME }}/frontend:${{ steps.set_frontend_tag.outputs.tag }}
-    
 
       - name: Terraform Init
         working-directory: ./infra
         run: terraform init
 
       - name: Terraform Apply
-        working-directory: ./infra
+        working-directory: ${{ env.TERRAFORM_WORKING_DIR }}
         run: |
           terraform apply -auto-approve \
-            -var="backend_image_tag=${{ env.IMAGE_TAG }}" \
-            -var="frontend_image_tag=${{ env.IMAGE_TAG }}"
+            -var="backend_image_tag=${{ env.IMAGE_TAG }}"
 
-      - name: Output Cloud Run URLs
-        working-directory: ./infra
-        run: terraform output
+      - name: Setup Node.js for Frontend
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20' # Koristite istu verziju kao u vašem Dockerfile-u
+
+      - name: Install Frontend Dependencies
+        run: npm ci # 'ci' je brži i preporučen za CI/CD
+        working-directory: ${{ env.FRONTEND_WORKING_DIR }}
+
+      - name: Build Frontend Application
+        run: npm run build
+        working-directory: ${{ env.FRONTEND_WORKING_DIR }}
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Deploy to Firebase Hosting
+        run: firebase deploy --only hosting --project ${{ env.PROJECT_ID }} --non-interactive
+        working-directory: . # Firebase komanda se često pokreće iz root-a gde su .firebaserc i firebase.json
+
+      # - name: Set Backend Image Tag
+      #   id: set_backend_tag
+      #   run: |
+      #     if [[ "${{ steps.check_backend.outputs.backend }}" == "true" ]]; then
+      #       echo "Kreira se novi tag za backend."
+      #       echo "tag=${{ env.IMAGE_TAG }}" >> $GITHUB_OUTPUT
+      #     else
+      #       echo "Nema promena za backend. Preuzima se trenutni tag."
+      #       CURRENT_IMAGE=$(gcloud run services describe ${{ env.BACKEND_NAME }} --region ${{ env.REGION }} --format 'value(template.spec.containers[0].image)' --project ${{ steps.get_project_id.outputs.project_id }} || echo "")
+      #       if [[ -z "$CURRENT_IMAGE" ]]; then
+      #         echo "tag=${{ env.IMAGE_TAG }}" >> $GITHUB_OUTPUT
+      #       else
+      #         CURRENT_TAG=$(echo $CURRENT_IMAGE | cut -d':' -f2)
+      #         echo "tag=$CURRENT_TAG" >> $GITHUB_OUTPUT
+      #       fi
+      #     fi
+
+      # - name: Build & Push backend image
+      #  if: steps.check_backend.outputs.backend == 'true' || steps.set_backend_tag.outputs.tag == env.IMAGE_TAG
+      #   run: |
+      #     docker build -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/backend:${{ steps.set_backend_tag.outputs.tag }} ./backend
+      #     docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/backend:${{ steps.set_backend_tag.outputs.tag }}
+
+      # - name: Set Frontend Image Tag
+      #   id: set_frontend_tag
+      #   run: |
+      #     if [[ "${{ steps.check_frontend.outputs.frontend }}" == "true" ]]; then
+      #       echo "Kreira se novi tag za frontend."
+      #       echo "tag=${{ env.IMAGE_TAG }}" >> $GITHUB_OUTPUT
+      #     else
+      #       echo "Nema promena za frontend. Preuzima se trenutni tag."
+      #       CURRENT_IMAGE=$(gcloud run services describe ${{ env.FRONTEND_NAME }} --region ${{ env.REGION }} --format 'value(template.spec.containers[0].image)' --project ${{ steps.get_project_id.outputs.project_id }} || echo "")
+      #       if [[ -z "$CURRENT_IMAGE" ]]; then
+      #         echo "tag=${{ env.IMAGE_TAG }}" >> $GITHUB_OUTPUT
+      #       else
+      #         CURRENT_TAG=$(echo $CURRENT_IMAGE | cut -d':' -f2)
+      #         echo "tag=$CURRENT_TAG" >> $GITHUB_OUTPUT
+      #       fi
+      #     fi
+
+      # - name: Build & Push frontend image
+      #   if: steps.check_frontend.outputs.frontend == 'true' || steps.set_frontend_tag.outputs.tag == env.IMAGE_TAG
+      #   run: |
+      #     docker build -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/frontend:${{ steps.set_frontend_tag.outputs.tag }} ./frontendJS
+      #     docker push ${{ env.REGION }}-docker.pkg.dev/${{env.PROJECT_ID }}/${{ env.REPO_NAME }}/frontend:${{ steps.set_frontend_tag.outputs.tag }}
+    
+
+      # - name: Terraform Init
+      #   working-directory: ./infra
+      #   run: terraform init
+
+      # - name: Terraform Apply
+      #   working-directory: ./infra
+      #   run: |
+      #     terraform apply -auto-approve \
+      #       -var="backend_image_tag=${{ env.IMAGE_TAG }}" \
+      #       -var="frontend_image_tag=${{ env.IMAGE_TAG }}"
+
+      # - name: Output Cloud Run URLs
+      #   working-directory: ./infra
+      #   run: terraform output
 
