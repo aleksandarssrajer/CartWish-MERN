@@ -45,7 +45,7 @@ jobs:
           docker build -t europe-west1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/cartwish-repo/backend:${{ env.IMAGE_TAG }} ./backend
           docker push europe-west1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/cartwish-repo/backend:${{ env.IMAGE_TAG }}
 
-      - name: Build & Push frontend image with backend URL
+      - name: Build & Push frontend image 
         run: |
           docker build -t europe-west1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/cartwish-repo/frontend:${{ github.sha }} ./frontendJS
           docker push europe-west1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/cartwish-repo/frontend:${{ github.sha }}
