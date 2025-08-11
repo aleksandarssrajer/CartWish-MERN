@@ -12,14 +12,12 @@ resource "google_cloud_run_service" "frontend" {
         }
       }
     }
+
+    metadata {
+      annotations = {
+        "run.googleapis.com/ingress" = "internal-and-cloud-load-balancing"
+      }
+    }
   }
 }
 
-resource "google_cloud_run_service_iam_member" "frontend_public" {
-  location = google_cloud_run_service.frontend.location
-  service  = google_cloud_run_service.frontend.name
-  role     = "roles/run.invoker"
-  member   = "allUsers"
-
-  depends_on = [google_cloud_run_service.frontend]
-}

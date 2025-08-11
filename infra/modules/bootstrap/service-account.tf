@@ -14,6 +14,8 @@ resource "google_project_iam_member" "github_deploy_permissions" {
     "roles/iam.serviceAccountTokenCreator",
     "roles/iam.serviceAccountAdmin",      
     "roles/secretmanager.admin"
+
+    //MORAS RUCNO DODATI projectIAMAdmin rolu da bi mogao da setujes service accountv-ve
   ])
 
   role    = each.key

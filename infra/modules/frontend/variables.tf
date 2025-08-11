@@ -3,3 +3,4 @@ variable "frontend_image_tag" {
   type        = string
   default     = "latest" # ili "" ako hoćeš da bude required ručno
 }
+

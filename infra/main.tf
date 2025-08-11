@@ -38,3 +38,12 @@ module "frontend" {
   frontend_image_tag = var.frontend_image_tag
 }
 
+module loadbalancer {
+  source = "./modules/loadBalancer"
+  region = var.region
+  frontend_service_name = module.frontend.frontend_service_name
+  backend_service_name  = module.backend.backend_service_name
+}
+
+
+
