@@ -12,3 +12,8 @@ variable "backend_service_name" {
   description = "The name of the backend Cloud Run service."
   type        = string
 }
+variable "project_id" {
+  description = "GCP Project ID"
+  type        = string
+  default     = "sara-sandbox-interns"
+}

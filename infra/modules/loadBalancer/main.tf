@@ -31,13 +31,11 @@ resource "google_compute_region_backend_service" "frontend_backend_service" {
 
     backend {
       group = google_compute_region_network_endpoint_group.frontend_neg.id
-      capacity_scaler = 1.0
-      balancing_mode      = "RATE"
-      max_rate_per_endpoint = 100
     }
 }
 
 resource "google_compute_region_backend_service" "backend_backend_service" {
+    project = var.project_id
     name = "cartwish-lb-backend-bes"
     region      = var.region
     protocol              = "HTTP"
@@ -45,9 +43,6 @@ resource "google_compute_region_backend_service" "backend_backend_service" {
 
     backend {
       group = google_compute_region_network_endpoint_group.backend_neg.id
-      balancing_mode      = "RATE"
-      max_rate_per_endpoint = 100
-      capacity_scaler = 1.0
     }
 }
 
