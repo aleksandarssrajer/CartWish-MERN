@@ -33,7 +33,6 @@ resource "google_compute_region_backend_service" "frontend_backend_service" {
 
     backend {
       group = google_compute_region_network_endpoint_group.frontend_neg.id
-  
     }
 }
 
