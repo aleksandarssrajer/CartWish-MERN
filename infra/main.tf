@@ -43,6 +43,7 @@ module loadbalancer {
   region = var.region
   frontend_service_name = module.frontend.frontend_service_name
   backend_service_name  = module.backend.backend_service_name
+  depends_on = [ module.bootstrap ]
 }
 
 
