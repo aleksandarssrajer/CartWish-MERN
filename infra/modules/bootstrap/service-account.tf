@@ -11,12 +11,9 @@ resource "google_project_iam_member" "github_deploy_permissions" {
     "roles/iam.serviceAccountUser",
     "roles/viewer",
     "roles/iam.workloadIdentityPoolAdmin",
-    "roles/iam.serviceAccountTokenCreator",     
+    "roles/iam.serviceAccountTokenCreator",
+    "roles/iam.serviceAccountAdmin",      
     "roles/secretmanager.admin"
-    //Moras dodati i za service account- rucno!
-  #   gcloud projects add-iam-policy-binding sara-sandbox-interns \
-  # --member="serviceAccount:github-actions-deployer@sara-sandbox-interns.iam.gserviceaccount.com" \
-  # --role="roles/resourcemanager.projectIamAdmin"
   ])
 
   role    = each.key
