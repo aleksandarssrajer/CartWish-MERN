@@ -30,8 +30,9 @@ resource "google_compute_region_backend_service" "frontend_backend_service" {
     load_balancing_scheme = "EXTERNAL_MANAGED"
 
     backend {
-    group = google_compute_region_network_endpoint_group.frontend_neg.id
-  }
+      group = google_compute_region_network_endpoint_group.frontend_neg.id
+      capacity_scaler = 1.0
+    }
 }
 
 resource "google_compute_region_backend_service" "backend_backend_service" {
@@ -42,6 +43,7 @@ resource "google_compute_region_backend_service" "backend_backend_service" {
 
     backend {
       group = google_compute_region_network_endpoint_group.backend_neg.id
+      capacity_scaler = 1.0
     }
 }
 
