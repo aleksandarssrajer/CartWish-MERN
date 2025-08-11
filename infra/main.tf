@@ -28,6 +28,8 @@ module "bootstrap" {
 module "backend" {
   source            = "./modules/backend"
   backend_image_tag = var.backend_image_tag
+  database_url_secret = var.database_url_secret
+  jwt_secret_value    = var.jwt_secret_value    
   depends_on = [ module.bootstrap ]
 }
 
