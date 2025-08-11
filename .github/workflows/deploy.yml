@@ -21,9 +21,6 @@ jobs:
   deploy:
     name: Build & Deploy
     runs-on: ubuntu-latest
-    outputs:
-      backend_changed: ${{ steps.check_backend.outputs.changed }}
-      frontend_changed: ${{ steps.check_frontend.outputs.changed }}
 
     steps:
       - name: Checkout repository
@@ -36,31 +33,6 @@ jobs:
           workload_identity_provider: ${{secrets.WORKLOAD_IDENTITY_PROVIDER}}
           service_account: ${{secrets.SERVICE_ACCOUNT_EMAIL}}
 
-      - name: Check if backend changed
-        id: check_backend
-        run: |
-          git fetch origin main --depth=2
-          if git diff --quiet HEAD^ HEAD -- backend; then
-            echo "changed=false" >> $GITHUB_OUTPUT
-          else
-            echo "changed=true" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Check if frontend changed
-        id: check_frontend
-        run: |
-          git fetch origin main --depth=2
-          if git diff --quiet HEAD^ HEAD -- frontendJS; then
-            echo "changed=false" >> $GITHUB_OUTPUT
-          else
-            echo "changed=true" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
-        with:
-          terraform_version: 1.5.7
-
       - name: Setup Docker
         uses: docker/setup-buildx-action@v3
 
@@ -69,39 +41,30 @@ jobs:
           gcloud auth configure-docker europe-west1-docker.pkg.dev
 
       - name: Build & Push backend image
-        if: steps.check_backend.outputs.changed == 'true'
         run: |
           docker build -t europe-west1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/cartwish-repo/backend:${{ env.IMAGE_TAG }} ./backend
           docker push europe-west1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/cartwish-repo/backend:${{ env.IMAGE_TAG }}
 
+      - name: Build & Push frontend image with backend URL
+        run: |
+          docker build -t europe-west1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/cartwish-repo/frontend:${{ github.sha }} ./frontendJS
+          docker push europe-west1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/cartwish-repo/frontend:${{ github.sha }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.7
+
       - name: Terraform Init
         working-directory: ./infra
         run: terraform init
-
-      - name: Deploy backend to Cloud Run 
-        if: steps.check_backend.outputs.changed == 'true'
-        working-directory: ./infra
-        run: terraform apply -auto-approve -target=module.backend -var="backend_image_tag=${{ env.IMAGE_TAG }}"
-
-      - name: Get current backend URL from Cloud Run
-        id: backend_url
+      
+      - name: Terraform Apply
         run: |
-          url=$(gcloud run services describe ${{ env.BACKEND_NAME }} \
-            --region ${{ env.REGION }} \
-            --format='value(status.url)')
-          echo "BACKEND_URL=$url" >> $GITHUB_OUTPUT
-
-      - name: Build & Push frontend image with backend URL
-        if: steps.check_frontend.outputs.changed == 'true'
-        run: |
-          docker build --build-arg VITE_API_URL=${{ steps.backend_url.outputs.BACKEND_URL }}/api -t europe-west1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/cartwish-repo/frontend:${{ github.sha }} ./frontendJS
-          docker push europe-west1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/cartwish-repo/frontend:${{ github.sha }}
-
-      - name: Deploy frontend to Cloud Run
-        if: steps.check_frontend.outputs.changed == 'true' 
+          terraform apply -auto-approve \
+            -var="backend_image_tag=${{ env.IMAGE_TAG }}" \
+            -var="frontend_image_tag=${{ env.IMAGE_TAG }}"
         working-directory: ./infra
-        run: terraform apply -auto-approve -target=module.frontend -var="frontend_image_tag=${{ env.IMAGE_TAG }}"
-
 
       - name: Output Cloud Run URLs
         working-directory: ./infra
